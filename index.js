@@ -1,12 +1,15 @@
 const TelegramBot = require('node-telegram-bot-api');
+const express = require('express');
+require('dotenv').config();
 const {gameOptions, againOptions} = require('./options');
-const dotenv = require('dotenv');
-dotenv.config();
 
+const app = express();
+const port = process.env.PORT || 5000;
 const token = process.env.BOT_TOKEN;
+const bot = new TelegramBot(token, {polling: true});
+app.use(express.json());
 
 const chats = {};
-const bot = new TelegramBot(token, {polling: true});
 
 const startGame = async (chatId) => {
 	await bot.sendMessage(chatId, 'Now I will think of a number from 0 to 9, and you have to guess it');
@@ -66,4 +69,17 @@ Your nickname is ${author.first_name}
 	});
 };
 
-start();
+app.get('/', (req, res) => {
+	res.status(200).json({message: 'Hello from the Bot API.'});
+});
+// TELEGRAM WEBHOOK - https://core.telegram.org/bots/api#setwebhook
+app.post(`/${process.env.BOT_TOKEN}`, (req, res) => {
+	bot.processUpdate(req.body);
+	res.status(200).json({message: 'ok'});
+});
+
+
+app.listen(port, async() => {
+	await start();
+	console.log(`\n\nServer running on port ${port}.\n\n`);
+});
